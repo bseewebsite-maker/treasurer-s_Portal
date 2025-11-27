@@ -1,0 +1,5 @@
+{
+  "name": "Treasurer's Portal",
+  "description": "A web application for treasurers to manage member payments and create new collections. Users can be marked as paid or unpaid, and collections can be created with a specific amount per member to track fundraising progress.",
+  "requestFramePermissions": []
+}
