@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import type { User, Collection, PaymentStatuses } from '../types';
-import { BellIcon } from './Icons';
+import { BellIcon, LockClosedIcon, CheckCircleIcon } from './Icons';
 
 declare const XLSX: any;
 
@@ -21,7 +22,6 @@ const ToggleSwitch = ({ id, checked, onChange, disabled }: { id: string, checked
     </label>
 );
 
-
 const SettingsPage: React.FC<SettingsPageProps> = ({ users, collections, paymentStatuses, onBack }) => {
     // Notification states
     const [areNotificationsGloballyEnabled, setAreNotificationsGloballyEnabled] = useState(() => localStorage.getItem('areNotificationsGloballyEnabled') !== 'false');
@@ -30,11 +30,25 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ users, collections, payment
     const [deadlineReminderTiming, setDeadlineReminderTiming] = useState<DeadlineTiming>(() => (localStorage.getItem('deadlineReminderTiming') as DeadlineTiming) || '1-day-before');
     const [notificationPermission, setNotificationPermission] = useState(Notification.permission);
 
+    // Vault States
+    const [isVaultOpen, setIsVaultOpen] = useState(false);
+    const [isVaultAuthenticated, setIsVaultAuthenticated] = useState(false);
+    const [vaultUser, setVaultUser] = useState('');
+    const [vaultPass, setVaultPass] = useState('');
+    const [portalReturnUrl, setPortalReturnUrl] = useState('');
+    const [vaultError, setVaultError] = useState('');
+    const [isUrlSaved, setIsUrlSaved] = useState(false);
+
     // Save notification settings to localStorage whenever they change
     useEffect(() => { localStorage.setItem('areNotificationsGloballyEnabled', String(areNotificationsGloballyEnabled)); }, [areNotificationsGloballyEnabled]);
     useEffect(() => { localStorage.setItem('newCollectionNotifications', String(newCollectionNotifications)); }, [newCollectionNotifications]);
     useEffect(() => { localStorage.setItem('paymentNotifications', String(paymentNotifications)); }, [paymentNotifications]);
     useEffect(() => { localStorage.setItem('deadlineReminderTiming', deadlineReminderTiming); }, [deadlineReminderTiming]);
+
+    useEffect(() => {
+        const savedUrl = localStorage.getItem('bseePortalReturnUrl');
+        if (savedUrl) setPortalReturnUrl(savedUrl);
+    }, []);
 
     const requestNotificationPermission = async () => {
         if ('Notification' in window) {
@@ -89,6 +103,30 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ users, collections, payment
         });
 
         XLSX.writeFile(workbook, "treasurers_portal_full_export.xlsx");
+    };
+
+    const handleVaultLogin = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (vaultUser === 'user1' && vaultPass === 'admin_1') {
+            setIsVaultAuthenticated(true);
+            setVaultError('');
+        } else {
+            setVaultError('Invalid credentials');
+        }
+    };
+
+    const handleSaveVaultUrl = () => {
+        localStorage.setItem('bseePortalReturnUrl', portalReturnUrl);
+        setIsUrlSaved(true);
+        setTimeout(() => setIsUrlSaved(false), 2000);
+    };
+
+    const handleCloseVault = () => {
+        setIsVaultOpen(false);
+        setIsVaultAuthenticated(false);
+        setVaultUser('');
+        setVaultPass('');
+        setVaultError('');
     };
 
     const renderNotificationPermissionStatus = () => {
@@ -179,6 +217,88 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ users, collections, payment
                     <p className="text-xs text-gray-600 mt-2">This will download a single .xlsx file containing a summary, student list, and a detailed sheet for each collection.</p>
                 </div>
             </div>
+
+            {/* Vault Access */}
+            <div className="border-t border-slate-200 pt-6">
+                <button
+                    onClick={() => setIsVaultOpen(true)}
+                    className="flex items-center text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors"
+                >
+                    <LockClosedIcon className="w-4 h-4 mr-2" />
+                    Admin Vault
+                </button>
+            </div>
+
+            {/* Vault Modal */}
+            {isVaultOpen && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in" onClick={handleCloseVault}>
+                    <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md border border-slate-200" onClick={e => e.stopPropagation()}>
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-xl font-bold text-gray-800 flex items-center">
+                                <LockClosedIcon className="w-6 h-6 mr-2 text-slate-700" />
+                                {isVaultAuthenticated ? 'Vault Configuration' : 'Vault Access'}
+                            </h3>
+                            <button onClick={handleCloseVault} className="text-gray-400 hover:text-gray-600">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        {!isVaultAuthenticated ? (
+                            <form onSubmit={handleVaultLogin} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Username</label>
+                                    <input 
+                                        type="text" 
+                                        value={vaultUser}
+                                        onChange={e => setVaultUser(e.target.value)}
+                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        autoFocus
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Password</label>
+                                    <input 
+                                        type="password" 
+                                        value={vaultPass}
+                                        onChange={e => setVaultPass(e.target.value)}
+                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                    />
+                                </div>
+                                {vaultError && <p className="text-sm text-red-600">{vaultError}</p>}
+                                <button 
+                                    type="submit"
+                                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-slate-800 hover:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500"
+                                >
+                                    Unlock
+                                </button>
+                            </form>
+                        ) : (
+                            <div className="space-y-4">
+                                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                    <label className="block text-sm font-bold text-gray-700 mb-2">BSeePortal Return URL</label>
+                                    <p className="text-xs text-gray-500 mb-2">Enter the full link (e.g., https://portal.bsee.edu) for the return button.</p>
+                                    <input 
+                                        type="url" 
+                                        value={portalReturnUrl}
+                                        onChange={e => setPortalReturnUrl(e.target.value)}
+                                        placeholder="https://..."
+                                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                    />
+                                </div>
+                                <button 
+                                    onClick={handleSaveVaultUrl}
+                                    className="w-full flex items-center justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all"
+                                >
+                                    {isUrlSaved ? <CheckCircleIcon className="w-5 h-5 mr-2" /> : null}
+                                    {isUrlSaved ? 'Saved Permanently' : 'Save URL'}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

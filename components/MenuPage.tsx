@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { Cog6ToothIcon, UserCircleIcon, UsersIcon, BanknotesIcon } from './Icons';
+import { Cog6ToothIcon, UserCircleIcon, UsersIcon, BanknotesIcon, ArrowLeftOnRectangleIcon } from './Icons';
 
 interface MenuPageProps {
     setActiveView: (view: 'settings' | 'profile' | 'members' | 'cashOnHand') => void;
@@ -12,6 +13,15 @@ const MenuPage: React.FC<MenuPageProps> = ({ setActiveView }) => {
 
     const handleProfileClick = () => {
         setActiveView('profile');
+    };
+
+    const handleReturnToPortal = () => {
+        const url = localStorage.getItem('bseePortalReturnUrl');
+        if (url) {
+            window.location.href = url;
+        } else {
+            alert("Return URL has not been configured in the Vault.");
+        }
     };
 
     return (
@@ -67,6 +77,18 @@ const MenuPage: React.FC<MenuPageProps> = ({ setActiveView }) => {
                     <div>
                         <h3 className="font-bold text-stone-800 group-hover:text-stone-900 transition-colors">Settings</h3>
                         <p className="text-xs text-stone-500 mt-0.5">Manage application settings.</p>
+                    </div>
+                </button>
+                <button
+                    onClick={handleReturnToPortal}
+                    className="w-full text-left p-5 bg-red-50/60 backdrop-blur-md border border-red-100 rounded-2xl shadow-sm flex items-center hover:bg-red-100 hover:border-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all duration-300 group"
+                >
+                    <div className="bg-red-100 p-3 rounded-full mr-4 group-hover:bg-red-200 transition-colors">
+                         <ArrowLeftOnRectangleIcon className="h-7 w-7 text-red-600"/>
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-stone-800 group-hover:text-red-800 transition-colors">Return to Portal</h3>
+                        <p className="text-xs text-stone-500 mt-0.5">Sign out and leave the app.</p>
                     </div>
                 </button>
             </div>

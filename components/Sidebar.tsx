@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { DashboardIcon, CollectionIcon, ClockIcon, EllipsisHorizontalIcon, BanknotesIcon } from './Icons';
+import { DashboardIcon, CollectionIcon, ClockIcon, EllipsisHorizontalIcon, BanknotesIcon, ArrowLeftOnRectangleIcon } from './Icons';
 
 type View = 'dashboard' | 'collections' | 'members' | 'history' | 'remitted' | 'menu' | 'settings' | 'profile';
 
@@ -23,6 +24,15 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, setSelecte
   const handleNavClick = (view: View) => {
     setSelectedCollectionId(null);
     setActiveView(view);
+  };
+
+  const handleReturnToPortal = () => {
+      const url = localStorage.getItem('bseePortalReturnUrl');
+      if (url) {
+          window.location.href = url;
+      } else {
+          alert("Return URL has not been configured in the Vault.");
+      }
   };
 
   return (
@@ -65,6 +75,16 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, setSelecte
                   );
               })}
           </nav>
+          
+          <div className="pt-4 mt-4 border-t border-white/40">
+              <button 
+                  onClick={handleReturnToPortal}
+                  className="flex items-center w-full px-4 py-3 text-sm font-medium rounded-2xl text-slate-600 hover:bg-red-50 hover:text-red-700 transition-all duration-300 group"
+              >
+                  <ArrowLeftOnRectangleIcon className="h-5 w-5 mr-3 text-slate-500 group-hover:text-red-600 transition-colors" />
+                  Return to Portal
+              </button>
+          </div>
       </aside>
 
       {/* Mobile Dock - Floating macOS Style */}
